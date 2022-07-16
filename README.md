@@ -1,2 +1,2 @@
 # realestate-nlp
-NLP for Real Estate (RLP.ca project)
+NLP for Real Estate

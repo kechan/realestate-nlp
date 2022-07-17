@@ -55,3 +55,6 @@ def load_full_listing_df(data_dir, dedup_remark=False):
   print(f'len(full_listing_df): {full_listing_df.shape[0]}')
 
   return full_listing_df
+
+def test_q_py(df, q_str):
+  return df.q_py(q_str)

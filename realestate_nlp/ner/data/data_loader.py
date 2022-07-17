@@ -1,3 +1,5 @@
+from ...common import class_extensions
+
 import pandas as pd
 
 def load_full_listing_df(data_dir, dedup_remark=False):
@@ -56,5 +58,5 @@ def load_full_listing_df(data_dir, dedup_remark=False):
 
   return full_listing_df
 
-def test_q_py(df, q_str):
-  return df.q_py(q_str)
+# def test_q_py(df, q_str):
+#   return df.q_py(q_str)

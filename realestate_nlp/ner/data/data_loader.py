@@ -1,18 +1,17 @@
 from ...common import class_extensions
-
 import pandas as pd
 
 def load_full_listing_df(data_dir, dedup_remark=False):
 
   uat_listing_df = pd.read_pickle(data_dir/'full_listing_presentation_b_df.pickle.gz', compression='gzip')
-  print(f'Loaded full_listing_presentation_b_df: {len(uat_listing_df)}')
+  print(f'Loaded full_listing_presentation_b_df from AVM UAT dev: {len(uat_listing_df)}')
 
   floorSpace_cols = [c for c in uat_listing_df.columns if 'floor' in c]
   interior_cols = [c for c in uat_listing_df.columns if 'sizeInterior' in c]
 
   es_pickle_path = data_dir/'listing_es_df_pickles'
   listing_es_df = pd.read_feather(es_pickle_path/'listing_es_df')
-  print(f'len(listing_es_df): {listing_es_df.shape[0]}')  # 319540, 380351, 428256, 447473
+  print(f'Loaded listing_es_df from image tagging: {listing_es_df.shape[0]}')
 
   synthetic_sentences = [
     {"jumpId": "syn00000001", "listingType": "RES", "remarks": "This house has a 1000 SqFt+ Garage."},
@@ -53,10 +52,15 @@ def load_full_listing_df(data_dir, dedup_remark=False):
   full_listing_df.drop_duplicates(subset='jumpId', keep='last', inplace=True)
   if dedup_remark:
     full_listing_df.drop_duplicates(subset='remarks', keep='last', inplace=True)
-  full_listing_df.reset_index(drop=True, inplace=True)
+  full_listing_df.defrag_index(inplace=True)
   print(f'len(full_listing_df): {full_listing_df.shape[0]}')
 
   return full_listing_df
 
-# def test_q_py(df, q_str):
-#   return df.q_py(q_str)
+def load_remarks_ner_all_df(data_dir):
+  remarks_ner_all_df = []
+  for f in data_dir.lf('remarks_*_df.pickle'):
+    remarks_ner_all_df.append(pd.read_pickle(f))
+
+  remarks_ner_all_df = pd.concat(remarks_ner_all_df, axis=0, ignore_index=True)
+  return remarks_ner_all_df

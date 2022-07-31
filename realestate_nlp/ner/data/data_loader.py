@@ -1,7 +1,14 @@
-from ...common import class_extensions
+import json, gzip, gc
 import pandas as pd
+from datetime import datetime
+from pathlib import Path
 
-def load_full_listing_df(data_dir, dedup_remark=False):
+from ...common import class_extensions
+from ...common.run_config import home, bOnColab
+
+
+
+def load_full_listing_df(data_dir, dedup_remark=False, res_condo_only=True):
 
   uat_listing_df = pd.read_pickle(data_dir/'full_listing_presentation_b_df.pickle.gz', compression='gzip')
   print(f'Loaded full_listing_presentation_b_df from AVM UAT dev: {len(uat_listing_df)}')
@@ -49,9 +56,14 @@ def load_full_listing_df(data_dir, dedup_remark=False):
   idx = full_listing_df.q_py("remarks.isnull()").index
   full_listing_df.drop(index=idx, inplace=True)
 
+  if res_condo_only:
+    idx = full_listing_df.q_py("~listingType.isin(['RES', 'CONDO'])").index
+    full_listing_df.drop(index=idx, inplace=True)
+
   full_listing_df.drop_duplicates(subset='jumpId', keep='last', inplace=True)
   if dedup_remark:
     full_listing_df.drop_duplicates(subset='remarks', keep='last', inplace=True)
+    
   full_listing_df.defrag_index(inplace=True)
   print(f'len(full_listing_df): {full_listing_df.shape[0]}')
 
@@ -64,3 +76,54 @@ def load_remarks_ner_all_df(data_dir):
 
   remarks_ner_all_df = pd.concat(remarks_ner_all_df, axis=0, ignore_index=True)
   return remarks_ner_all_df
+
+def load_avm_prod_snapshot(snapshot_date=None, download_from_gs=True) -> pd.DataFrame:
+  if snapshot_date is None:
+    snapshot_date = datetime.today().date().strftime("%Y_%m_%d")
+  else:
+    snapshot_date = snapshot_date.strftime('%Y_%m_%d')
+
+  print(f'{"Running on colab" if bOnColab else "Running on local machine"}, saving to /content')
+
+  # copy snapshot from gcs to local
+  if bOnColab:
+    data_dir = Path('/content')
+  else:
+    data_dir = Path('/Users/kelvinchan/tmp')
+
+  if download_from_gs:
+    from google.cloud import storage
+    storage_project_id = 'royallepage.ca:api-project-267497502775'
+    storage_client = storage.Client(project=storage_project_id)
+    storage_bucket = storage_client.get_bucket('ai-tests')
+
+    snapshot_json_files = [f.name for f in storage_bucket.list_blobs(prefix=f'AVMDataAnalysis/quickquote_prod_snapshot_{snapshot_date}')]
+    for f in snapshot_json_files:
+      print(f'Downloading {Path(f).name} from gcs')
+      blob = storage_bucket.blob(f)
+      blob.download_to_filename(f'{data_dir/Path(f).name}')    # f'/content/{Path(f).name}'
+
+  listing_dfs = []
+  for f in Path('/content').lf(f'quickquote_prod_snapshot_{snapshot_date}*.json.gz'):
+    print(f'Processing {f}')
+    with gzip.open(f, 'r') as fp:
+      payload = json.load(fp)
+      
+    listing_df = pd.DataFrame(payload)
+    listing_df.listingDate = pd.to_datetime(listing_df.listingDate)
+    listing_df.lastUpdate = pd.to_datetime(listing_df.lastUpdate, format="%y-%m-%d:%H:%M:%S")
+    listing_df.addedOn = pd.to_datetime(listing_df.addedOn, format="%Y-%m-%dT%H:%M:%S")
+
+    idx = listing_df.q_py("lastUpdate < '2021-12-01'").index
+    listing_df.drop(index=idx, inplace=True)
+    listing_df.listingType = listing_df.listingType.apply(lambda a: a[-1])  # e.g. [listingType, RES] => 'RES'
+
+    listing_dfs.append(listing_df)
+  
+  listing_df = pd.concat(listing_dfs, axis=0, ignore_index=True)
+  del listing_dfs
+  gc.collect()
+
+  listing_df.drop_duplicates(subset='jumpId', inplace=True, ignore_index=True)
+
+  return listing_df

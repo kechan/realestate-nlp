@@ -303,6 +303,8 @@ def gen_weak_supervised_entities_from_model(model, tokenizer, sentence, tags):
 
 
 if __name__ == '__main__':
+  # unit tests
+
   def unit_test_has_number_followed_by_unit(test_strings):
     for s in test_strings:
       # print(has_number_followed_by_unit(s))

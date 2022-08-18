@@ -78,6 +78,10 @@ def load_remarks_ner_all_df(data_dir):
   return remarks_ner_all_df
 
 def load_avm_prod_snapshot(snapshot_date=None, download_from_gs=True) -> pd.DataFrame:
+  '''
+  Load the raw json snapshot during AVM monitoring and return it as a dataframe.
+  '''
+
   if snapshot_date is None:
     snapshot_date = datetime.today().date().strftime("%Y_%m_%d")
   else:
@@ -127,3 +131,4 @@ def load_avm_prod_snapshot(snapshot_date=None, download_from_gs=True) -> pd.Data
   listing_df.drop_duplicates(subset='jumpId', inplace=True, ignore_index=True)
 
   return listing_df
+

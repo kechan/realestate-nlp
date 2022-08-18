@@ -19,3 +19,4 @@ def join_df(left, right, left_on, right_on=None, suffix='_y', how='left'):
     if right_on is None: right_on = left_on
     return left.merge(right, how=how, left_on=left_on, right_on=right_on, 
                       suffixes=("", suffix))
+

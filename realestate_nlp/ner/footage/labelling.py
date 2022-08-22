@@ -322,6 +322,7 @@ if __name__ == '__main__':
 
   unit_test_has_number_followed_by_unit(test_strings)
   unit_test_get_html_w_number_or_sq_ft_colored(test_strings)
+  unit_test_gen_weak_supervised_entities(test_strings)
 
   #  Test findall with all_regexes on test_strings
   '''

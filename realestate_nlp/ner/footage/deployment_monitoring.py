@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import re
 
-from realestate_nlp.common.run_config import home, bOnColab
+from realestate_core.common.run_config import home, bOnColab
 
 def analyse_logs(logfile: str) -> pd.DataFrame:
   logfile = Path(logfile)

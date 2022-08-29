@@ -3,8 +3,9 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
-from ...common import class_extensions
-from ...common.run_config import home, bOnColab
+from realestate_core.common import class_extensions
+# from ...common.run_config import home, bOnColab
+from realestate_core.common.run_config import home, bOnColab
 
 
 
